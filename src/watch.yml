@@ -2,10 +2,12 @@
 appname: "mypkg"   # 项目名称
 watch_file_exts:  # 监控的文件后缀
     [".go",".yml"]
-output:
+output: ""
 cmds:         # 执行额外参数
-excluded_paths: #不需要监控的目录
+excluded: #不需要监控的目录和文件夹
     ["vendor"]
 
-ignoredFilesRegExps :
+ignored_file_exts : # 忽略的文件后缀
     [".go.swp",".go~",".tmp"]
+
+watch_path: "../"
