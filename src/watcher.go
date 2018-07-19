@@ -105,7 +105,6 @@ func autoBuild(files []string) {
 	bcmd.Stdout = os.Stdout
 	bcmd.Stderr = os.Stderr
 	err = bcmd.Run()
-
 	if err != nil {
 		log.Printf("============== Build failed ===================\n")
 		return

@@ -25,7 +25,6 @@ type Config struct {
 var configFile = "watch.yml"
 
 func (c *Config) NewConfig() (err error) {
-	c = &Config{}
 	//检测地址是否是绝对地址，是绝对地址直接返回，不是绝对地址，会添加当前工作路径到参数path前，然后返回
 	filename, _ := filepath.Abs(configFile)
 	//判断文件是否存在
@@ -37,8 +36,10 @@ func (c *Config) NewConfig() (err error) {
 	if err != nil {
 		return
 	}
+
 	//格式化配置文件到yamlConfig
-	err = yaml.Unmarshal(yamlFile, c)
+	err = yaml.Unmarshal(yamlFile, &c)
+
 	return
 }
 
