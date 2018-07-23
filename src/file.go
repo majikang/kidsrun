@@ -37,32 +37,36 @@ func readDirectory(directory string, paths *[]string, c *Config) {
 		return
 	}
 
-	useDirectory := false
 	//遍历读取目录下的文件
 	for _, fileInfo := range fileInfos {
-		for _, ignoredFileExt := range c.IgnoredFileExts {
-			if ignoredFileExt != "" && strings.HasSuffix(fileInfo.Name(), ignoredFileExt) {
-				continue
-			}
+
+		//监控的文件名后缀，为空时不判断
+		if !isExcluded(path.Ext(fileInfo.Name()), &c.WatchFileExts) {
+			continue
 		}
+
+		//忽略的文件后缀名
+		if isExcluded(path.Ext(fileInfo.Name()), &c.IgnoredFileExts) {
+			continue
+		}
+
+		wholePath := path.Join(directory, fileInfo.Name())
 
 		if !c.VendorWatch && strings.HasSuffix(fileInfo.Name(), "vendor") {
 			continue
 		}
 
-		if isExcluded(path.Join(directory, fileInfo.Name()), &c.Excluded) {
+		//不需要监控的目录和文件夹
+		if isExcluded(wholePath, &c.Excluded) {
 			continue
 		}
 
 		if fileInfo.IsDir() == true && fileInfo.Name()[0] != '.' {
-			readDirectory(directory+"/"+fileInfo.Name(), paths, c)
+			readDirectory(wholePath, paths, c)
 			continue
 		}
-		if useDirectory == true {
-			continue
-		}
-		*paths = append(*paths, directory)
-		useDirectory = true
+
+		*paths = append(*paths, wholePath)
 	}
 	return
 }

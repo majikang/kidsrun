@@ -3,17 +3,15 @@ package main
 import (
 	"flag"
 	"os"
-	"runtime"
-	"strings"
+	"os/signal"
+	"syscall"
 )
 
 var (
 	c        *Config
 	currPath string
-	exit     chan bool
 	output   string
-	buildPkg string
-	started  chan bool
+	sign     chan os.Signal
 	paths    []string
 )
 
@@ -52,17 +50,11 @@ func main() {
 }
 
 func runApp() {
-
 	files := []string{}
-	if buildPkg != "" {
-		files = strings.Split(buildPkg, ",")
-	}
+
 	NewWatcher(paths, files)
-	autoBuild(files)
-	for {
-		select {
-		case <-exit:
-			runtime.Goexit()
-		}
-	}
+	autoBuild(files, true)
+	sign = make(chan os.Signal)
+	signal.Notify(sign, os.Interrupt, os.Kill, syscall.SIGUSR1, syscall.SIGUSR2)
+	<-sign
 }

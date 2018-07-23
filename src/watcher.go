@@ -19,7 +19,7 @@ var (
 	scheduleTime time.Time
 )
 
-func NewWatcher(paths []string, files []string) {
+func NewWatcher(paths, files []string) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Printf(" Fail to create new Watcher[ %s ]\n", err)
@@ -30,6 +30,8 @@ func NewWatcher(paths []string, files []string) {
 		for {
 			select {
 			case e := <-watcher.Events:
+				log.Printf("接收到e事件 # %+v #\n", e)
+
 				isbuild := true
 
 				// Skip ignored files
@@ -59,8 +61,9 @@ func NewWatcher(paths []string, files []string) {
 							}
 							return
 						}
+						log.Printf("重新编译 # %+v #\n", files)
 
-						autoBuild(files)
+						autoBuild(files, false)
 					}()
 				}
 			case err := <-watcher.Errors:
@@ -69,7 +72,7 @@ func NewWatcher(paths []string, files []string) {
 		}
 	}()
 
-	log.Printf("Initializing watcher...\n")
+	log.Printf("Initializing watcher......\n")
 	for _, path := range paths {
 		log.Printf("Directory( %s )\n", path)
 		err = watcher.Add(path)
@@ -81,7 +84,7 @@ func NewWatcher(paths []string, files []string) {
 
 }
 
-func autoBuild(files []string) {
+func autoBuild(files []string, first bool) {
 	state.Lock()
 	defer state.Unlock()
 
@@ -100,17 +103,39 @@ func autoBuild(files []string) {
 	}
 	args = append(args, files...)
 
-	bcmd := exec.Command(cmdName, args...)
-	bcmd.Env = append(os.Environ(), "GOGC=off")
-	bcmd.Stdout = os.Stdout
-	bcmd.Stderr = os.Stderr
-	err = bcmd.Run()
+	cmd = exec.Command(cmdName, args...)
+	cmd.Env = append(os.Environ(), "GOGC=off")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
 	if err != nil {
-		log.Printf("============== Build failed ===================\n")
+		log.Printf("================ Build failed ===================\n")
 		return
 	}
-	log.Printf("Build was successful\n")
-	Restart(c.Output)
+	log.Printf("Build successful!!")
+	Restart(first)
+}
+
+func Start() {
+	log.Printf("server %s is starting...\n", c.AppName)
+	if strings.Index(c.Output, "/") == -1 {
+		c.Output = "./" + c.Output
+	}
+
+	cmd = exec.Command(c.Output)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Args = append([]string{c.Output}, c.Cmds...)
+
+	go cmd.Run()
+	log.Printf("%s running...\n", c.AppName)
+}
+
+func Restart(first bool) {
+	if !first {
+		Kill()
+	}
+	Start()
 }
 
 func Kill() {
@@ -119,31 +144,11 @@ func Kill() {
 			fmt.Println("Kill.recover -> ", e)
 		}
 	}()
+
 	if cmd != nil && cmd.Process != nil {
 		err := cmd.Process.Kill()
 		if err != nil {
 			fmt.Println("Kill -> ", err)
 		}
 	}
-}
-
-func Start(appname string) {
-	log.Printf("Restarting %s ...\n", appname)
-	if strings.Index(appname, "./") == -1 {
-		appname = "./" + appname
-	}
-
-	cmd = exec.Command(appname)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Args = append([]string{appname}, c.Cmds...)
-
-	go cmd.Run()
-	log.Printf("%s is running...\n", appname)
-	started <- true
-}
-
-func Restart(appname string) {
-	Kill()
-	go Start(appname)
 }

@@ -2,7 +2,7 @@
 appname: "mypkg"   # 项目名称
 watch_file_exts:  # 监控的文件后缀
     [".go",".yml"]
-output: "gotest"
+output: "/Users/mjk/go/gowatcher/gotest"
 cmds:         # 执行额外参数
 excluded: #不需要监控的目录和文件夹
     ["vendor"]

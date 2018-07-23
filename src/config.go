@@ -49,27 +49,22 @@ func getConfig() (*Config, error) {
 	if err != nil {
 		return c, err
 	}
-
-	if c.AppName == "" {
-		//app名默认取目当前文件夹名
-		if output == "" {
-			c.AppName = path.Base(currPath)
-		} else {
-			c.AppName = path.Base(output)
-		}
-	}
-
 	if output != "" {
 		c.Output = output
 	}
 
-	//如果未指定output则为"./appname"
+	//app名默认取output
 	if c.Output == "" {
+		if c.AppName == "" {
+			c.AppName = path.Base(currPath)
+		}
 		outputExt := ""
 		if runtime.GOOS == "windows" {
 			outputExt = ".exe"
 		}
 		c.Output = "./" + c.AppName + outputExt
+	} else {
+		c.AppName = path.Base(c.Output)
 	}
 
 	//监听的文件后缀
